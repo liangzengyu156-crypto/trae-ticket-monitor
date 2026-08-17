@@ -25,21 +25,34 @@ function shanghaiDateTime(value: string): string {
   return `${byType.get("year")}-${byType.get("month")}-${byType.get("day")} ${byType.get("hour")}:${byType.get("minute")}:${byType.get("second")}`;
 }
 
+function shanghaiMonthDay(value: string): string {
+  const date = shanghaiDateTime(value).slice(0, 10);
+  const [, month, day] = date.split("-");
+  return `${Number(month)}月${Number(day)}日`;
+}
+
+function shanghaiClock(value: string): string {
+  return shanghaiDateTime(value).slice(11);
+}
+
 function availabilityIntent(
   code: string,
   slot: Pick<SlotState, "startsAt" | "displayTime" | "lastRemaining" | "lastCheckedAt">
 ): NotificationIntent {
   return {
     id: "slot:" + code,
-    title: "TRAE 有票：" + slot.displayTime,
+    title: "🚨 TRAE 放票：" + slot.displayTime,
     body:
-      "时段日期 " + shanghaiDateTime(slot.startsAt).slice(0, 10) +
-      "；剩余 " + String(slot.lastRemaining ?? "未知") +
-      " 个名额；北京时间检测时间 " + shanghaiDateTime(String(slot.lastCheckedAt)) +
-      "。请打开微信手动预约。",
+      "剩余 " + String(slot.lastRemaining ?? "未知") +
+      " 个名额｜" + shanghaiMonthDay(slot.startsAt) +
+      " " + shanghaiClock(String(slot.lastCheckedAt)) +
+      " 检测到。立即打开微信 → 最近使用 → TRAE AI创造力大赛",
     group: "trae-ticket-monitor",
     sound: "alarm",
-    url: "weixin://"
+    url: "weixin://",
+    level: "critical",
+    call: "1",
+    volume: "10"
   };
 }
 

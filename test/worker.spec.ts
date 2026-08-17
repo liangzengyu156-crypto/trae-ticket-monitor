@@ -428,7 +428,7 @@ describe("worker Durable Object integration", () => {
       contentType: "application/json; charset=utf-8",
       body: {
         device_key: barkKey,
-        title: "TRAE 有票：12:00-14:00",
+        title: "🚨 TRAE 放票：12:00-14:00",
         group: "trae-ticket-monitor",
         url: "weixin://"
       }

@@ -59,6 +59,9 @@ export interface NotificationIntent {
   group: "trae-ticket-monitor";
   sound: "alarm";
   url: "weixin://";
+  level?: "critical" | "active" | "timeSensitive" | "passive";
+  call?: "1";
+  volume?: "10";
 }
 
 export interface SlotStatusView {

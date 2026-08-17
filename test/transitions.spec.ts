@@ -41,11 +41,14 @@ describe("availability transitions", () => {
 
     expect(intent).toEqual({
       id: "slot:D1-1200",
-      title: "TRAE 有票：12:00-14:00",
-      body: "时段日期 2026-08-21；剩余 2 个名额；北京时间检测时间 2026-08-20 13:00:00。请打开微信手动预约。",
+      title: "🚨 TRAE 放票：12:00-14:00",
+      body: "剩余 2 个名额｜8月21日 13:00:00 检测到。立即打开微信 → 最近使用 → TRAE AI创造力大赛",
       group: "trae-ticket-monitor",
       sound: "alarm",
-      url: "weixin://"
+      url: "weixin://",
+      level: "critical",
+      call: "1",
+      volume: "10"
     });
     expect(next.slots["D1-1200"].pendingNotification).toEqual(intent);
   });
@@ -95,6 +98,11 @@ describe("health transitions", () => {
       record = applySourceFailure(record, count, "source unavailable");
     }
     expect(listPendingNotifications(record).map((item) => item.id)).toContain("health:failure");
+    const failure = listPendingNotifications(record).find((item) => item.id === "health:failure");
+    expect(failure).toBeDefined();
+    expect(failure).not.toHaveProperty("level");
+    expect(failure).not.toHaveProperty("call");
+    expect(failure).not.toHaveProperty("volume");
   });
 
   it("cancels an undelivered stale failure alert on recovery", () => {
@@ -114,6 +122,11 @@ describe("health transitions", () => {
     }
     record = markNotificationDelivered(record, "health:failure", 3);
     record = applyCatalogSuccess(record, [slot()], 4);
+    const recovery = listPendingNotifications(record).find((item) => item.id === "health:recovery");
+    expect(recovery).toBeDefined();
+    expect(recovery).not.toHaveProperty("level");
+    expect(recovery).not.toHaveProperty("call");
+    expect(recovery).not.toHaveProperty("volume");
     record = applySourceFailure(record, 5, "source unavailable");
     expect(listPendingNotifications(record).map((item) => item.id)).not.toContain("health:recovery");
   });

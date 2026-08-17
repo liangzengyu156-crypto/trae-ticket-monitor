@@ -64,6 +64,11 @@ describe("MonitorService", () => {
       "Bark 推送配置成功。测试标识 2026-08-20T03:56:00.000Z。点击此通知测试打开微信。",
       "Bark 推送配置成功。测试标识 2026-08-20T03:56:01.000Z。点击此通知测试打开微信。"
     ]);
+    for (const intent of pushed) {
+      expect(intent).not.toHaveProperty("level");
+      expect(intent).not.toHaveProperty("call");
+      expect(intent).not.toHaveProperty("volume");
+    }
   });
 
   it("marks only active current catalog entries as active in the status view", () => {
@@ -291,7 +296,7 @@ describe("MonitorService", () => {
     expect(pushed).toHaveLength(2);
     expect(pushed[1]).toEqual(pushed[0]);
     expect(pushed[1]?.body).toContain("剩余 2 个名额");
-    expect(pushed[1]?.body).toContain("北京时间检测时间 2026-08-20 11:57:00");
+    expect(pushed[1]?.body).toContain("8月21日 11:57:00 检测到");
     expect(store.record.slots["D1-1200"].lastRemaining).toBe(0);
     expect(store.record.slots["D1-1200"].notificationPending).toBe(false);
   });
