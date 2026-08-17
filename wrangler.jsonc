@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "trae-ticket-monitor",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-17",
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MONITOR",
+        "class_name": "Monitor"
+      }
+    ]
+  },
+  "exports": {
+    "Monitor": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
+}
