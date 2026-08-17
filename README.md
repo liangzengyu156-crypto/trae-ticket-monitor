@@ -40,13 +40,14 @@ The Worker deploy includes a one-minute Cron Trigger, a single `MONITOR` Durable
 
 ## Verify on iPhone
 
-1. Open the deployed `workers.dev` URL in iPhone Safari and enter `ADMIN_TOKEN`.
-2. Confirm the default watched slots are `D1-1200` and `D1-1400`.
-3. Run exactly one immediate check and verify that both default slot states appear.
-4. Send exactly one Bark test notification.
-5. Tap the notification and confirm that `weixin://` opens WeChat. If iOS blocks the scheme, use the notification's instruction to open WeChat manually.
+1. In iPhone Settings, open Bark notification settings and allow notifications, sounds, and Critical Alerts. Also verify the TRAE monitor group is not muted inside Bark.
+2. Open the deployed `workers.dev` URL in iPhone Safari and enter `ADMIN_TOKEN`.
+3. Confirm the default watched slots are `D1-1200` and `D1-1400`.
+4. Run exactly one immediate check and verify that both default slot states appear.
+5. Send exactly one Bark test notification. It remains an ordinary notification and does not exercise the 30-second critical ringtone.
+6. Tap the notification and confirm that `weixin://` opens WeChat. Then open Recently Used and select `TRAE AI创造力大赛` manually.
 
-The notification only helps you return to WeChat. Open the recently used mini program and complete any booking yourself.
+WeChat does not expose a supported link for opening the user's most recently used Mini Program. Opening a specified third-party Mini Program requires that Mini Program's AppID, a published page path, and owner-side WeChat Platform configuration; this project does not own or configure the TRAE Mini Program.
 
 ## After the activity and cleanup
 
