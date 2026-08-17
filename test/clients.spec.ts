@@ -121,7 +121,11 @@ describe("fetchTimeSlots", () => {
 
 describe("sendBark", () => {
   it("posts critical delivery controls for an availability intent", async () => {
-    const fetcher = vi.fn(async () => new Response(null, { status: 204 }));
+    let request: RequestInit | undefined;
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      request = init;
+      return new Response(null, { status: 204 });
+    });
     const criticalIntent: NotificationIntent = {
       ...intent,
       level: "critical",
@@ -131,7 +135,6 @@ describe("sendBark", () => {
 
     await sendBark(fetcher as typeof fetch, "device-secret", criticalIntent);
 
-    const request = fetcher.mock.calls[0]?.[1];
     expect(JSON.parse(String(request?.body))).toEqual({
       device_key: "device-secret",
       title: "票务提醒",
