@@ -49,6 +49,23 @@ function sequenceClock(...values: number[]): () => number {
 }
 
 describe("MonitorService", () => {
+  it("gives repeated Bark test notifications distinct timestamps", async () => {
+    const pushed: NotificationIntent[] = [];
+    const service = new MonitorService(new MemoryStore(), {
+      now: sequenceClock(ordinaryMinute, ordinaryMinute + 1_000),
+      fetchSlots: async () => [sourceSlot()],
+      push: async (intent) => { pushed.push(intent); }
+    });
+
+    await service.testNotification();
+    await service.testNotification();
+
+    expect(pushed.map((intent) => intent.body)).toEqual([
+      "Bark 推送配置成功。测试标识 2026-08-20T03:56:00.000Z。点击此通知测试打开微信。",
+      "Bark 推送配置成功。测试标识 2026-08-20T03:56:01.000Z。点击此通知测试打开微信。"
+    ]);
+  });
+
   it("marks only active current catalog entries as active in the status view", () => {
     const record = createInitialRecord();
     record.config.watchedCodes = [];

@@ -213,10 +213,11 @@ export class MonitorService {
   }
 
   async testNotification(): Promise<void> {
+    const testTimestamp = timestamp(this.dependencies.now());
     await this.dependencies.push({
       id: "test",
       title: "TRAE 余票监测测试",
-      body: "Bark 推送配置成功。点击此通知测试打开微信。",
+      body: `Bark 推送配置成功。测试标识 ${testTimestamp}。点击此通知测试打开微信。`,
       group: "trae-ticket-monitor",
       sound: "alarm",
       url: "weixin://"
