@@ -57,7 +57,10 @@ export async function sendBark(
         body: intent.body,
         group: intent.group,
         sound: intent.sound,
-        url: intent.url
+        url: intent.url,
+        level: intent.level,
+        call: intent.call,
+        volume: intent.volume
       })
     });
     if (!response.ok) throw new Error(`Bark HTTP ${response.status}`);
