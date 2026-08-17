@@ -36,7 +36,7 @@ describe("fetchTimeSlots", () => {
     expect(fetcher).toHaveBeenCalledWith(sourceUrl, expect.objectContaining({
       method: "GET",
       headers: { Accept: "application/json" },
-      redirect: "error"
+      redirect: "manual"
     }));
   });
 
@@ -108,6 +108,15 @@ describe("fetchTimeSlots", () => {
 
     await expect(fetchTimeSlots(fetcher as typeof fetch, controller.signal)).rejects.toThrow("source timeout");
   });
+
+  it("rejects a source redirect instead of following it", async () => {
+    const fetcher = vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { Location: "https://example.com/untrusted" }
+    }));
+
+    await expect(fetchTimeSlots(fetcher as typeof fetch)).rejects.toThrow("source HTTP 302");
+  });
 });
 
 describe("sendBark", () => {
@@ -119,7 +128,7 @@ describe("sendBark", () => {
     expect(fetcher).toHaveBeenCalledWith(barkUrl, expect.objectContaining({
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8" },
-      redirect: "error",
+      redirect: "manual",
       body: JSON.stringify({
         device_key: "device-secret",
         title: "票务提醒",
@@ -160,6 +169,18 @@ describe("sendBark", () => {
     const failure = sendBark(fetcher as typeof fetch, "device-secret", intent, controller.signal);
 
     await expect(failure).rejects.toThrow("Bark timeout");
+    await expect(failure).rejects.not.toThrow("device-secret");
+  });
+
+  it("rejects a Bark redirect without replaying the device key", async () => {
+    const fetcher = vi.fn(async () => new Response(null, {
+      status: 307,
+      headers: { Location: "https://example.com/untrusted" }
+    }));
+
+    const failure = sendBark(fetcher as typeof fetch, "device-secret", intent);
+
+    await expect(failure).rejects.toThrow("Bark HTTP 307");
     await expect(failure).rejects.not.toThrow("device-secret");
   });
 });

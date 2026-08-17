@@ -20,7 +20,7 @@ export async function fetchTimeSlots(
     const response = await fetcher(SOURCE_URL, {
       method: "GET",
       headers: { Accept: "application/json" },
-      redirect: "error",
+      redirect: "manual",
       signal
     });
     if (!response.ok) throw new SourceResponseError(`source HTTP ${response.status}`);
@@ -49,7 +49,7 @@ export async function sendBark(
     const response = await fetcher(BARK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8" },
-      redirect: "error",
+      redirect: "manual",
       signal,
       body: JSON.stringify({
         device_key: deviceKey,
