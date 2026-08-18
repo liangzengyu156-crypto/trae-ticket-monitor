@@ -108,8 +108,8 @@ describe("Monitor Durable Object", () => {
       operationQueue: Promise.resolve()
     }) as Monitor;
 
-    await expect(monitor.testNotification()).rejects.toThrow("Bark timeout");
-    await monitor.testNotification();
+    await expect(monitor.testCopyNotification()).rejects.toThrow("Bark timeout");
+    await monitor.testCriticalNotification();
 
     expect(fetchCalls).toBe(2);
   });

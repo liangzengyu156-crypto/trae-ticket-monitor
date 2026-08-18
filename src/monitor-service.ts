@@ -1,10 +1,12 @@
 import { SourceResponseError } from "./clients";
 import { planTick } from "./schedule";
 import {
+  availabilityCopy,
   applyCatalogSuccess,
   applySourceFailure,
   listPendingNotifications,
-  markNotificationDelivered
+  markNotificationDelivered,
+  shanghaiClock
 } from "./transitions";
 import type {
   MonitorRecord,
@@ -212,15 +214,34 @@ export class MonitorService {
     return { ok: true, status: await this.tick(nominalMs, true) };
   }
 
-  async testNotification(): Promise<void> {
-    const testTimestamp = timestamp(this.dependencies.now());
+  async testCopyNotification(): Promise<void> {
+    const checkedAt = timestamp(this.dependencies.now());
     await this.dependencies.push({
-      id: "test",
-      title: "TRAE 余票监测测试",
-      body: `Bark 推送配置成功。测试标识 ${testTimestamp}。点击此通知测试打开微信。`,
+      id: "test:copy",
+      ...availabilityCopy({
+        startsAt: "2026-08-21T12:00:00+08:00",
+        displayTime: "12:00-14:00",
+        lastRemaining: 2,
+        lastCheckedAt: checkedAt
+      }),
       group: "trae-ticket-monitor",
       sound: "alarm",
       url: "weixin://"
+    });
+  }
+
+  async testCriticalNotification(): Promise<void> {
+    const testTime = shanghaiClock(timestamp(this.dependencies.now()));
+    await this.dependencies.push({
+      id: "test:critical",
+      title: "🚨 TRAE 强提醒铃声测试",
+      body: `这是一条铃声测试，不代表有票。将以最大音量每 30 秒重复提醒。测试时间 ${testTime}。`,
+      group: "trae-ticket-monitor",
+      sound: "alarm",
+      url: "weixin://",
+      level: "critical",
+      call: "1",
+      volume: "10"
     });
   }
 

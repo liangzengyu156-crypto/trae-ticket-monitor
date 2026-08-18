@@ -30,7 +30,8 @@ class FakeMonitor {
   getStatusCalls: number[] = [];
   setConfigCalls: Array<{ codes: string[]; nowMs: number }> = [];
   tickCalls: Array<{ nowMs: number; force: boolean }> = [];
-  testNotificationCalls = 0;
+  testCopyNotificationCalls = 0;
+  testCriticalNotificationCalls = 0;
   configResult: ConfigUpdateResult = { ok: true, status };
   configFailure = false;
 
@@ -50,8 +51,12 @@ class FakeMonitor {
     return status;
   }
 
-  async testNotification(): Promise<void> {
-    this.testNotificationCalls += 1;
+  async testCopyNotification(): Promise<void> {
+    this.testCopyNotificationCalls += 1;
+  }
+
+  async testCriticalNotification(): Promise<void> {
+    this.testCriticalNotificationCalls += 1;
   }
 }
 
@@ -152,7 +157,8 @@ describe("worker routes", () => {
       new Request("https://worker.test/api/status"),
       new Request("https://worker.test/api/config", { method: "PUT", body: "not json" }),
       new Request("https://worker.test/api/check", { method: "POST" }),
-      new Request("https://worker.test/api/test-notification", { method: "POST" })
+      new Request("https://worker.test/api/test-notification", { method: "POST" }),
+      new Request("https://worker.test/api/test-critical-notification", { method: "POST" })
     ]) {
       const response = await routeRequest(request, env);
       expect(response.status).toBe(401);
@@ -162,7 +168,8 @@ describe("worker routes", () => {
     expect(monitor.getStatusCalls).toEqual([]);
     expect(monitor.setConfigCalls).toEqual([]);
     expect(monitor.tickCalls).toEqual([]);
-    expect(monitor.testNotificationCalls).toBe(0);
+    expect(monitor.testCopyNotificationCalls).toBe(0);
+    expect(monitor.testCriticalNotificationCalls).toBe(0);
   });
 
   it.each([
@@ -277,7 +284,7 @@ describe("worker routes", () => {
     expect(monitor.tickCalls[0]?.force).toBe(true);
   });
 
-  it("sends a test notification through the primary Monitor", async () => {
+  it("sends a production-copy preview through the primary Monitor", async () => {
     const monitor = new FakeMonitor();
     const response = await routeRequest(
       authorizedRequest("/api/test-notification", { method: "POST" }),
@@ -287,7 +294,22 @@ describe("worker routes", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({ ok: true });
-    expect(monitor.testNotificationCalls).toBe(1);
+    expect(monitor.testCopyNotificationCalls).toBe(1);
+    expect(monitor.testCriticalNotificationCalls).toBe(0);
+  });
+
+  it("sends a critical ringtone test through the primary Monitor", async () => {
+    const monitor = new FakeMonitor();
+    const response = await routeRequest(
+      authorizedRequest("/api/test-critical-notification", { method: "POST" }),
+      workerEnv(monitor)
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(await response.json()).toEqual({ ok: true });
+    expect(monitor.testCopyNotificationCalls).toBe(0);
+    expect(monitor.testCriticalNotificationCalls).toBe(1);
   });
 
   it("hides environment values on unknown routes", async () => {
@@ -348,6 +370,27 @@ describe("worker Durable Object integration", () => {
       lastError: "",
       tokenError: "管理密钥无效，请重新输入",
       actionFeedback: ""
+    });
+  });
+
+  it("wires separate production-copy and confirmed critical test actions", async () => {
+    const response = await workerExports.default.fetch(new Request("https://worker.test/"));
+    const result = await exerciseInlineAdminScript(await response.text(), "notification-tests");
+
+    expect(result).toEqual({
+      fetchPaths: ["/api/test-notification", "/api/test-critical-notification"],
+      confirmCalls: ["将触发最大音量并每 30 秒重复响铃。确认发送强提醒测试吗？"],
+      actionFeedback: "强提醒铃声测试已发送。"
+    });
+  });
+
+  it("does not send a critical test when the confirmation is cancelled", async () => {
+    const response = await workerExports.default.fetch(new Request("https://worker.test/"));
+    const result = await exerciseInlineAdminScript(await response.text(), "critical-cancel");
+
+    expect(result).toEqual({
+      fetchPaths: [],
+      confirmCalls: ["将触发最大音量并每 30 秒重复响铃。确认发送强提醒测试吗？"]
     });
   });
 

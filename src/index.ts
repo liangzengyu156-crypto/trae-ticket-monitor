@@ -78,7 +78,12 @@ export async function routeRequest(request: Request, env: Env): Promise<Response
     }
 
     if (request.method === "POST" && url.pathname === "/api/test-notification") {
-      await getMonitor(env).testNotification();
+      await getMonitor(env).testCopyNotification();
+      return json({ ok: true });
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/test-critical-notification") {
+      await getMonitor(env).testCriticalNotification();
       return json({ ok: true });
     }
 

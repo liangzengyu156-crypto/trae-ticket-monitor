@@ -49,7 +49,7 @@ function sequenceClock(...values: number[]): () => number {
 }
 
 describe("MonitorService", () => {
-  it("gives repeated Bark test notifications distinct timestamps", async () => {
+  it("previews the exact production copy without critical delivery controls", async () => {
     const pushed: NotificationIntent[] = [];
     const service = new MonitorService(new MemoryStore(), {
       now: sequenceClock(ordinaryMinute, ordinaryMinute + 1_000),
@@ -57,18 +57,55 @@ describe("MonitorService", () => {
       push: async (intent) => { pushed.push(intent); }
     });
 
-    await service.testNotification();
-    await service.testNotification();
+    await service.testCopyNotification();
+    await service.testCopyNotification();
 
-    expect(pushed.map((intent) => intent.body)).toEqual([
-      "Bark 推送配置成功。测试标识 2026-08-20T03:56:00.000Z。点击此通知测试打开微信。",
-      "Bark 推送配置成功。测试标识 2026-08-20T03:56:01.000Z。点击此通知测试打开微信。"
+    expect(pushed).toEqual([
+      {
+        id: "test:copy",
+        title: "🚨 TRAE 放票：12:00-14:00",
+        body: "剩余 2 个名额｜8月21日 11:56:00 检测到。立即打开微信 → 最近使用 → TRAE AI创造力大赛",
+        group: "trae-ticket-monitor",
+        sound: "alarm",
+        url: "weixin://"
+      },
+      {
+        id: "test:copy",
+        title: "🚨 TRAE 放票：12:00-14:00",
+        body: "剩余 2 个名额｜8月21日 11:56:01 检测到。立即打开微信 → 最近使用 → TRAE AI创造力大赛",
+        group: "trae-ticket-monitor",
+        sound: "alarm",
+        url: "weixin://"
+      }
     ]);
     for (const intent of pushed) {
       expect(intent).not.toHaveProperty("level");
       expect(intent).not.toHaveProperty("call");
       expect(intent).not.toHaveProperty("volume");
     }
+  });
+
+  it("sends an explicit ringtone test with every critical delivery control", async () => {
+    const pushed: NotificationIntent[] = [];
+    const service = new MonitorService(new MemoryStore(), {
+      now: () => ordinaryMinute,
+      fetchSlots: async () => [sourceSlot()],
+      push: async (intent) => { pushed.push(intent); }
+    });
+
+    await service.testCriticalNotification();
+
+    expect(pushed).toEqual([{
+      id: "test:critical",
+      title: "🚨 TRAE 强提醒铃声测试",
+      body: "这是一条铃声测试，不代表有票。将以最大音量每 30 秒重复提醒。测试时间 11:56:00。",
+      group: "trae-ticket-monitor",
+      sound: "alarm",
+      url: "weixin://",
+      level: "critical",
+      call: "1",
+      volume: "10"
+    }]);
   });
 
   it("marks only active current catalog entries as active in the status view", () => {

@@ -31,8 +31,21 @@ function shanghaiMonthDay(value: string): string {
   return `${Number(month)}月${Number(day)}日`;
 }
 
-function shanghaiClock(value: string): string {
+export function shanghaiClock(value: string): string {
   return shanghaiDateTime(value).slice(11);
+}
+
+export function availabilityCopy(
+  slot: Pick<SlotState, "startsAt" | "displayTime" | "lastRemaining" | "lastCheckedAt">
+): Pick<NotificationIntent, "title" | "body"> {
+  return {
+    title: "🚨 TRAE 放票：" + slot.displayTime,
+    body:
+      "剩余 " + String(slot.lastRemaining ?? "未知") +
+      " 个名额｜" + shanghaiMonthDay(slot.startsAt) +
+      " " + shanghaiClock(String(slot.lastCheckedAt)) +
+      " 检测到。立即打开微信 → 最近使用 → TRAE AI创造力大赛"
+  };
 }
 
 function availabilityIntent(
@@ -41,12 +54,7 @@ function availabilityIntent(
 ): NotificationIntent {
   return {
     id: "slot:" + code,
-    title: "🚨 TRAE 放票：" + slot.displayTime,
-    body:
-      "剩余 " + String(slot.lastRemaining ?? "未知") +
-      " 个名额｜" + shanghaiMonthDay(slot.startsAt) +
-      " " + shanghaiClock(String(slot.lastCheckedAt)) +
-      " 检测到。立即打开微信 → 最近使用 → TRAE AI创造力大赛",
+    ...availabilityCopy(slot),
     group: "trae-ticket-monitor",
     sound: "alarm",
     url: "weixin://",

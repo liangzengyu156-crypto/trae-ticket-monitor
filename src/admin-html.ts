@@ -144,7 +144,8 @@ export function renderAdminPage(): string {
       <div class="actions" aria-label="监测操作">
         <button id="save-button" type="button" disabled>保存关注时段</button>
         <button id="check-button" class="secondary" type="button" disabled>立即检查</button>
-        <button id="test-button" class="secondary" type="button" disabled>测试 Bark 推送</button>
+        <button id="copy-test-button" class="secondary" type="button" disabled>测试正式文案</button>
+        <button id="critical-test-button" class="secondary" type="button" disabled>测试强提醒铃声</button>
         <button id="logout-button" class="danger" type="button" disabled>退出登录</button>
       </div>
       <p id="action-feedback" class="help action-feedback" role="status" aria-live="polite"></p>
@@ -207,10 +208,11 @@ export function renderAdminPage(): string {
       const loginButton = document.getElementById("login-button");
       const saveButton = document.getElementById("save-button");
       const checkButton = document.getElementById("check-button");
-      const testButton = document.getElementById("test-button");
+      const copyTestButton = document.getElementById("copy-test-button");
+      const criticalTestButton = document.getElementById("critical-test-button");
       const logoutButton = document.getElementById("logout-button");
       const actionFeedback = document.getElementById("action-feedback");
-      const actionButtons = [saveButton, checkButton, testButton];
+      const actionButtons = [saveButton, checkButton, copyTestButton, criticalTestButton];
       const sessionGate = createSessionGate();
       let authenticated = false;
       let authenticatedBusy = false;
@@ -423,12 +425,23 @@ export function renderAdminPage(): string {
         }
       });
 
-      testButton.addEventListener("click", async () => {
-        const data = await runAuthenticated(testButton, "正在发送…", () => {
+      copyTestButton.addEventListener("click", async () => {
+        const data = await runAuthenticated(copyTestButton, "正在发送…", () => {
           return api("/api/test-notification", { method: "POST" });
         });
         if (data) {
-          setActionFeedback("Bark 测试推送已发送。", "success");
+          setActionFeedback("正式余票文案测试已发送。", "success");
+        }
+      });
+
+      criticalTestButton.addEventListener("click", async () => {
+        const confirmed = globalThis.confirm("将触发最大音量并每 30 秒重复响铃。确认发送强提醒测试吗？");
+        if (!confirmed) return;
+        const data = await runAuthenticated(criticalTestButton, "正在发送…", () => {
+          return api("/api/test-critical-notification", { method: "POST" });
+        });
+        if (data) {
+          setActionFeedback("强提醒铃声测试已发送。", "success");
         }
       });
 

@@ -51,21 +51,31 @@ export default defineConfig({
                     setItem(key, value) { values.set(key, value); }
                   };
                   const originalFetch = globalThis.fetch;
-                  globalThis.fetch = async () => input.scenario === "login-failure"
-                    ? Response.json({ error: "暂时无法读取状态" }, { status: 500 })
-                    : input.scenario === "login-unauthorized"
-                      ? Response.json({ error: "unauthorized" }, { status: 401 })
-                      : Response.json({
-                        now: "2026-08-20T03:56:00.000Z",
-                        watchedCodes: [],
-                        slots: [],
-                        health: {
-                          consecutiveSourceFailures: 2,
-                          lastSuccessAt: "2026-08-20T03:55:00.000Z",
-                          lastErrorAt: "2026-08-20T03:56:00.000Z",
-                          lastErrorSummary: "source unavailable"
-                        }
-                      });
+                  const originalConfirm = globalThis.confirm;
+                  const fetchPaths = [];
+                  const confirmCalls = [];
+                  globalThis.confirm = (message) => {
+                    confirmCalls.push(message);
+                    return input.scenario !== "critical-cancel";
+                  };
+                  globalThis.fetch = async (request) => {
+                    fetchPaths.push(new URL(typeof request === "string" ? request : request.url, "https://worker.test").pathname);
+                    return input.scenario === "login-failure"
+                      ? Response.json({ error: "暂时无法读取状态" }, { status: 500 })
+                      : input.scenario === "login-unauthorized"
+                        ? Response.json({ error: "unauthorized" }, { status: 401 })
+                        : Response.json({
+                          now: "2026-08-20T03:56:00.000Z",
+                          watchedCodes: [],
+                          slots: [],
+                          health: {
+                            consecutiveSourceFailures: 2,
+                            lastSuccessAt: "2026-08-20T03:55:00.000Z",
+                            lastErrorAt: "2026-08-20T03:56:00.000Z",
+                            lastErrorSummary: "source unavailable"
+                          }
+                        });
+                  };
                   try {
                     env.UNSAFE_EVAL.eval(input.script, "admin-inline.js");
                     if (input.scenario === "initialize") {
@@ -91,6 +101,22 @@ export default defineConfig({
                       });
                     }
 
+                    if (input.scenario === "notification-tests") {
+                      fetchPaths.length = 0;
+                      await elements.get("copy-test-button").listeners.get("click")();
+                      await elements.get("critical-test-button").listeners.get("click")();
+                      return Response.json({
+                        fetchPaths,
+                        confirmCalls,
+                        actionFeedback: elements.get("action-feedback").textContent
+                      });
+                    }
+                    if (input.scenario === "critical-cancel") {
+                      fetchPaths.length = 0;
+                      await elements.get("critical-test-button").listeners.get("click")();
+                      return Response.json({ fetchPaths, confirmCalls });
+                    }
+
                     const tokenAfterLogin = tokenInput.value;
                     const storedAfterLogin = values.get("trae-admin-token") ?? null;
                     await elements.get("logout-button").listeners.get("click")();
@@ -107,6 +133,7 @@ export default defineConfig({
                     return new Response(error instanceof Error ? error.stack : String(error), { status: 500 });
                   } finally {
                     globalThis.fetch = originalFetch;
+                    globalThis.confirm = originalConfirm;
                     delete globalThis.document;
                     delete globalThis.sessionStorage;
                   }

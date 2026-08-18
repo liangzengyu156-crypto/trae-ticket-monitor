@@ -39,8 +39,12 @@ export class Monitor extends DurableObject<Env> {
     return this.serialize(() => this.service().setConfig(codes, nowMs));
   }
 
-  testNotification() {
-    return this.serialize(() => this.service().testNotification());
+  testCopyNotification() {
+    return this.serialize(() => this.service().testCopyNotification());
+  }
+
+  testCriticalNotification() {
+    return this.serialize(() => this.service().testCriticalNotification());
   }
 
   private serialize<T>(operation: () => Promise<T>): Promise<T> {
